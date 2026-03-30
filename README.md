@@ -60,30 +60,13 @@ Authentication via Google, appropriate for an internal tool where the team alrea
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────┐
-│           React 19 Frontend (S3 + CloudFront)        │
-│  Portfolio → Site Detail → Trends → Document Upload  │
-└──────────────────────┬──────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────┐
-│           FastAPI Backend (AWS App Runner)           │
-│  /auth  /sites  /reports  /analytics  /issues        │
-│  Google OAuth  Async SQLAlchemy  Health scoring      │
-└──────────┬──────────────────────────┬───────────────┘
-           │                          │
-┌──────────▼──────────┐  ┌────────────▼──────────────┐
-│  RDS PostgreSQL      │  │   Claude API               │
-│  Sites, issues,      │  │   Document extraction      │
-│  reports, snapshots  │  │   Issue classification     │
-│  health history      │  │   Severity scoring         │
-└─────────────────────┘  └───────────────────────────┘
-                                      │
-                          ┌───────────▼──────────────┐
-                          │   S3                      │
-                          │   Document storage        │
-                          │   Report archive          │
-                          └──────────────────────────┘
+```mermaid
+flowchart TD
+    A["React 19 Frontend\nS3 + CloudFront\nPortfolio · Site Detail · Trends · Upload"] --> B["FastAPI Backend\nAWS App Runner\n/auth /sites /reports /analytics /issues"]
+    B --> C["RDS PostgreSQL\nSites · Issues · Reports\nSnapshots · Health history"]
+    B --> D["Claude API\nDocument extraction\nIssue classification · Severity scoring"]
+    B --> E["S3\nDocument storage\nReport archive"]
+    D --> C
 ```
 
 ---
