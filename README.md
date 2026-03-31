@@ -1,7 +1,7 @@
 # Case Study: LiveData Site Health Dashboard
 
 **Role:** Product Manager (spec + build)
-**Stack:** Python, FastAPI, React 19, PostgreSQL, Claude API, AWS (App Runner, RDS, S3, CloudFront, Lambda)
+**Stack:** Python, FastAPI, React 19, PostgreSQL, Claude API, AWS (App Runner, RDS, S3, CloudFront, Lambda), RapidFuzz, Terraform
 **Status:** Live — widely adopted across the organization
 
 > This is a case study. No proprietary source code or customer data is included. See `NOTICE.md`.
@@ -56,17 +56,44 @@ Aggregate views across the portfolio — issue counts over time, health score di
 ### Google OAuth
 Authentication via Google, appropriate for an internal tool where the team already uses Google Workspace.
 
+### Issue Clustering & AI Analysis
+Claude semantically clusters issues across all 85+ sites, surfacing cross-site patterns that would be invisible in a per-site view. A natural language Q&A interface lets CSMs ask questions like *"What's the most common issue type across VA sites this quarter?"* and get answers synthesized from the full portfolio.
+
+### Sales Signals & Opportunity Tracking
+CSA reports often surface upsell signals — a site running a product they don't have, a champion pushing for new capabilities, a pain point that maps directly to a product feature. The system extracts and tracks these as structured sales opportunities with pipeline stages (Identified → Qualified → Proposal → Closed), estimated value, probability scoring, and champion identification. Account teams see opportunities surfaced automatically from field reports rather than relying on CSMs to manually relay them.
+
+### Enhancement Request Tracking
+Feature requests captured from site visits are tracked as structured enhancement requests with status progression (Submitted → Planned → In Development → Released), business justification, priority voting, and JIRA ticket integration. Semantic clustering groups similar requests across sites, making it clear when a single feature would address 12 different site requests rather than just one.
+
+### Portfolio Action Items
+A portfolio-wide action item view across all 85+ sites — filterable by status, priority, due date, and owner type (LiveData vs. VA site vs. shared). Overdue items are surfaced automatically. This replaced a manual process of checking per-site notes to find what was outstanding.
+
+### Admin Dashboard & Observability
+Full internal observability for the team running the tool:
+- **Claude API cost tracking** — daily spend, cost by request type, token usage analytics, success/failure rates
+- **Extraction quality metrics** — confidence scores, fields extracted per report, user edit tracking, accuracy over time
+- **Audit logging** — every admin action logged with user, IP, timestamp, and success/failure
+- **System health metrics** — API error rates, Claude latency, extraction success rates
+
+### Contact Management & Deduplication
+Site contacts extracted from reports are tracked with role, department, last contact date, and visit count. Fuzzy matching (RapidFuzz) automatically detects potential duplicate contacts — flagging name matches above 85% confidence and auto-merging above 95% — keeping the contact database clean without manual auditing.
+
+### Comprehensive Data Export
+Every major data type is exportable to CSV: sites, issues, action items, enhancement requests, workflow observations, sales opportunities, and contacts. Timestamped filenames, site-prefixed exports, and proper character escaping throughout.
+
 ---
 
 ## Architecture
 
 ```mermaid
 flowchart TD
-    A["React 19 Frontend\nS3 + CloudFront\nPortfolio · Site Detail · Trends · Upload"] --> B["FastAPI Backend\nAWS App Runner\n/auth /sites /reports /analytics /issues"]
-    B --> C["RDS PostgreSQL\nSites · Issues · Reports\nSnapshots · Health history"]
-    B --> D["Claude API\nDocument extraction\nIssue classification · Severity scoring"]
+    A["React 19 Frontend\nS3 + CloudFront\nPortfolio · Site Detail · Trends · Issues\nEnhancements · Action Items · Sales Signals · Admin"] --> B["FastAPI Backend\nAWS App Runner\n/auth /sites /reports /analytics /issues /admin"]
+    B --> C["RDS PostgreSQL\n17 models — Sites · Issues · Reports\nEnhancements · Opportunities · Contacts\nSnapshots · Audit logs · API usage"]
+    B --> D["Claude API\nDocument extraction · Issue classification\nSeverity scoring · Issue clustering · NL Q&A"]
     B --> E["S3\nDocument storage\nReport archive"]
     D --> C
+    B --> F["RapidFuzz\nContact deduplication\nFuzzy name matching"]
+    F --> C
 ```
 
 ---
@@ -88,6 +115,9 @@ App Runner handles containerized deployments without the operational overhead of
 **5. Async SQLAlchemy throughout**
 All database operations use async SQLAlchemy 2.0 with a dependency-injected session pattern. This keeps the backend non-blocking under load and enforces consistent data access patterns as the codebase grows.
 
+**6. Extract everything, surface selectively**
+The system extracts 17 entity types from every report — issues, action items, contacts, enhancement requests, sales opportunities, pain points, workflow observations, configuration changes, staffing flags. Not all of these are visible on the main dashboard. The design principle was to capture everything once and surface the right view to the right role, rather than decide upfront which data mattered.
+
 ---
 
 ## Outcomes
@@ -97,3 +127,6 @@ All database operations use async SQLAlchemy 2.0 with a dependency-injected sess
 - Issues that previously required reading multiple PDFs are surfaced automatically
 - Portfolio-level trends visible for the first time — leadership can see which sites are improving, which are declining, and why
 - Field staff upload documents in their existing format; structured data appears without manual entry
+- Sales opportunities surfaced automatically from field reports — account teams no longer rely on CSMs to relay upsell signals verbally
+- Issue clustering identifies cross-site patterns that per-site views miss entirely
+- Enhancement requests from 85+ sites consolidated and clustered, making feature prioritization decisions data-driven
