@@ -130,3 +130,8 @@ The system extracts 17 entity types from every report — issues, action items, 
 - Sales opportunities surfaced automatically from field reports — account teams no longer rely on CSMs to relay upsell signals verbally
 - Issue clustering identifies cross-site patterns that per-site views miss entirely
 - Enhancement requests from 85+ sites consolidated and clustered, making feature prioritization decisions data-driven
+
+
+---
+
+More from Chris Eaton, VP of Product at LiveData: [chriseatonai.com](https://chriseatonai.com) &middot; [LinkedIn](https://www.linkedin.com/in/chris-eaton-ai/)
